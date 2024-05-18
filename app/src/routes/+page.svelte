@@ -1,2 +1,20 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script lang="ts">
+	import { ws } from '@qubit-rs/client';
+	import type { Server } from '$lib/api';
+
+	const api = ws<Server>('ws://localhost:3030/api');
+
+	const message = api.hello_world();
+</script>
+
+<h1>Qubit Poll</h1>
+
+<p>
+	Message from server:
+
+	{#await message}
+		<em>loading...</em>
+	{:then message}
+		<b>{message}</b>
+	{/await}
+</p>
