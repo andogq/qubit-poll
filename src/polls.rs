@@ -8,8 +8,8 @@ async fn list(ctx: Ctx) -> Vec<String> {
 }
 
 #[handler]
-async fn create(ctx: Ctx, name: String) {
-    ctx.poll_manager.create_poll(name).await;
+async fn create(ctx: Ctx, name: String, options: Vec<String>) {
+    ctx.poll_manager.create_poll(name, options).await;
 }
 
 pub fn init() -> Router<Ctx> {

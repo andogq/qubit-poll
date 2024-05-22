@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use tokio::sync::{mpsc, oneshot};
 
 /// Helper macro to insert a oneshot channel into a [`Message`], and return the awaited response
@@ -44,8 +42,14 @@ impl PollManager {
     }
 
     /// Create a new poll with the provided name.
-    pub async fn create_poll(&self, name: String) -> bool {
-        send_message!(self, CreatePoll { name: name })
+    pub async fn create_poll(&self, name: String, options: Vec<String>) -> u32 {
+        send_message!(
+            self,
+            CreatePoll {
+                name: name,
+                options: options
+            }
+        )
     }
 }
 
@@ -58,27 +62,35 @@ enum Message {
     /// returned, or `false` if there was an error.
     CreatePoll {
         name: String,
-        tx: oneshot::Sender<bool>,
+        options: Vec<String>,
+        tx: oneshot::Sender<u32>,
     },
 }
 
+struct Poll {
+    name: String,
+    options: Vec<String>,
+}
+
 async fn manager(mut rx: mpsc::Receiver<Message>) {
-    let mut polls = HashMap::new();
+    let mut polls = Vec::new();
 
     while let Some(message) = rx.recv().await {
         match message {
             Message::ListPolls { tx } => {
-                let available_polls = polls.keys().cloned().collect();
-                tx.send(available_polls).unwrap();
+                tx.send(
+                    polls
+                        .iter()
+                        .map(|poll: &Poll| poll.name.to_string())
+                        .collect(),
+                )
+                .unwrap();
             }
-            Message::CreatePoll { name, tx } => {
-                if polls.contains_key(&name) {
-                    return tx.send(false).unwrap();
-                }
+            Message::CreatePoll { name, options, tx } => {
+                let id = polls.len() as u32;
+                polls.push(Poll { name, options });
 
-                polls.insert(name, ());
-
-                tx.send(true).unwrap();
+                tx.send(id).unwrap();
             }
         }
     }
