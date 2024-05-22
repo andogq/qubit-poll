@@ -4,17 +4,34 @@
 
 	const api = ws<Server>('ws://localhost:3030/api');
 
-	const message = api.hello_world();
+	let poll_list = api.polls.list();
+
+	let poll_name: string;
+	async function create_poll() {
+		await api.polls.create(poll_name);
+		poll_name = '';
+
+		poll_list = api.polls.list();
+	}
 </script>
 
 <h1>Qubit Poll</h1>
 
-<p>
-	Message from server:
+<h2>Available Polls</h2>
 
-	{#await message}
-		<em>loading...</em>
-	{:then message}
-		<b>{message}</b>
-	{/await}
-</p>
+{#await poll_list then poll_list}
+	<ul>
+		{#each poll_list as poll}
+			<li>{poll}</li>
+		{/each}
+	</ul>
+{/await}
+
+<h2>Create Poll</h2>
+
+<label>
+	<span>Poll Name</span>
+	<input type="text" bind:value={poll_name} placeholder="Poll Name" />
+</label>
+
+<button on:click={create_poll}>Create</button>

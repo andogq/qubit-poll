@@ -1,15 +1,34 @@
-use std::net::{Ipv4Addr, SocketAddr};
+mod poll_manager;
+mod polls;
+
+use std::{
+    collections::HashMap,
+    net::{Ipv4Addr, SocketAddr},
+};
 
 use axum::routing::get;
+use poll_manager::PollManager;
 use qubit::{handler, Router};
 
+pub struct Poll {
+    pub question: String,
+    pub votes: HashMap<String, usize>,
+}
+
+#[derive(Clone)]
+pub struct Ctx {
+    pub poll_manager: PollManager,
+}
+
 #[handler]
-async fn hello_world(_ctx: ()) -> String {
+async fn hello_world(_ctx: Ctx) -> String {
     "Hello world!".to_string()
 }
 
-fn setup_router() -> Router<()> {
-    Router::new().handler(hello_world)
+fn setup_router() -> Router<Ctx> {
+    Router::new()
+        .handler(hello_world)
+        .nest("polls", polls::init())
 }
 
 #[tokio::main]
@@ -19,7 +38,11 @@ async fn main() {
     println!("Generating types");
     app.write_type_to_file("./app/src/lib/api.ts");
 
-    let (app_service, app_handle) = app.to_service(|_| ());
+    let ctx = Ctx {
+        poll_manager: PollManager::new(),
+    };
+
+    let (app_service, app_handle) = app.to_service(move |_| ctx.clone());
 
     let router = axum::Router::<()>::new()
         .route("/", get(|| async { "Hello, world!" }))
