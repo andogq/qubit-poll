@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use futures::{
     stream::{self, FuturesUnordered},
     Stream, StreamExt,
@@ -46,8 +44,8 @@ impl PollManager {
     }
 
     /// Retrieve a list of all available polls.
-    pub async fn list_polls(&self) -> Vec<Poll> {
-        send_message!(self, ListPolls {})
+    pub async fn list_polls(&self) -> Vec<PollSummary> {
+        send_message!(self, List {})
     }
 
     /// Create a new poll with the provided name.
@@ -59,7 +57,7 @@ impl PollManager {
     ) -> u32 {
         send_message!(
             self,
-            CreatePoll {
+            Create {
                 name: name,
                 description: description,
                 options: options
@@ -68,12 +66,12 @@ impl PollManager {
     }
 
     /// Get a poll with the provided ID.
-    pub async fn get_poll(&self, id: u32) -> Option<Poll> {
-        send_message!(self, GetPoll { id: id })
+    pub async fn get_poll(&self, poll: u32) -> Option<PollSummary> {
+        send_message!(self, GetSummary { poll: poll })
     }
 
     /// Vote for the given option on a poll.
-    pub async fn vote(&self, poll: u32, option: String) -> bool {
+    pub async fn vote(&self, poll: u32, option: u32) -> bool {
         send_message!(
             self,
             Vote {
@@ -84,12 +82,12 @@ impl PollManager {
     }
 
     /// Subscribe to vote changes on the given stream
-    pub async fn subscribe(&self, poll: u32) -> impl Stream<Item = HashMap<String, usize>> {
+    pub async fn poll_votes(&self, poll: u32) -> impl Stream<Item = Vec<usize>> {
         // Setup the channel
         let (tx, rx) = mpsc::channel(10);
 
         // Send it to the manager
-        self.tx.send(Message::Subscribe { poll, tx }).await.unwrap();
+        self.tx.send(Message::PollVotes { poll, tx }).await.unwrap();
 
         // Turn the resulting channel into a stream
         stream::unfold(rx, |mut rx| async move { Some((rx.recv().await?, rx)) })
@@ -99,11 +97,13 @@ impl PollManager {
 /// All possible message variations.
 enum Message {
     /// List all available polls.
-    ListPolls { tx: oneshot::Sender<Vec<Poll>> },
+    List {
+        tx: oneshot::Sender<Vec<PollSummary>>,
+    },
 
     /// Create a new poll with the provided name. If the creation was successful, `true` will be
     /// returned, or `false` if there was an error.
-    CreatePoll {
+    Create {
         name: String,
         description: String,
         options: Vec<String>,
@@ -111,21 +111,24 @@ enum Message {
     },
 
     /// Get a poll with the given ID.
-    GetPoll {
-        id: u32,
-        tx: oneshot::Sender<Option<Poll>>,
-    },
-
-    /// Subscribe to vote changes on a given poll
-    Subscribe {
+    GetSummary {
         poll: u32,
-        tx: mpsc::Sender<HashMap<String, usize>>,
+        tx: oneshot::Sender<Option<PollSummary>>,
     },
 
-    /// Vote on a poll
+    /// Subscribe to vote changes on a given poll.
+    PollVotes {
+        poll: u32,
+        tx: mpsc::Sender<Vec<usize>>,
+    },
+
+    /// Subscribe to a summary of all polls, to be notified of the total vote count for each poll.
+    SubscribeSummary { tx: mpsc::Sender<Vec<usize>> },
+
+    /// Vote on a poll.
     Vote {
         poll: u32,
-        option: String,
+        option: u32,
         tx: oneshot::Sender<bool>,
     },
 }
@@ -135,7 +138,27 @@ pub struct Poll {
     id: u32,
     name: String,
     description: String,
-    options: HashMap<String, usize>,
+    options: Vec<String>,
+    votes: Vec<usize>,
+}
+
+#[derive(Clone, Debug, TS, Serialize, TypeDependencies)]
+pub struct PollSummary {
+    id: u32,
+    name: String,
+    description: String,
+    options: Vec<String>,
+}
+
+impl From<&Poll> for PollSummary {
+    fn from(poll: &Poll) -> Self {
+        Self {
+            id: poll.id,
+            name: poll.name.clone(),
+            description: poll.description.clone(),
+            options: poll.options.clone(),
+        }
+    }
 }
 
 async fn manager(mut rx: mpsc::Receiver<Message>) {
@@ -144,25 +167,29 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
             id: 0,
             name: "Favourite color".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            votes: vec![3, 7, 2, 5],
         },
         Poll {
             id: 1,
             name: "Best food".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            votes: vec![3, 7, 2, 5],
         },
         Poll {
             id: 2,
             name: "Favourite color".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            votes: vec![3, 7, 2, 5],
         },
         Poll {
             id: 3,
             name: "Best food".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            votes: vec![3, 7, 2, 5],
         },
     ];
 
@@ -170,10 +197,11 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
 
     while let Some(message) = rx.recv().await {
         match message {
-            Message::ListPolls { tx } => {
-                tx.send(polls.clone()).unwrap();
+            Message::List { tx } => {
+                tx.send(polls.iter().map(|poll| poll.into()).collect())
+                    .unwrap();
             }
-            Message::CreatePoll {
+            Message::Create {
                 name,
                 description,
                 options,
@@ -184,20 +212,22 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                     id,
                     name,
                     description,
-                    options: options.into_iter().map(|s| (s, 0)).collect(),
+                    votes: vec![0; options.len()],
+                    options,
                 });
 
                 tx.send(id).unwrap();
             }
-            Message::GetPoll { id, tx } => {
-                tx.send(polls.get(id as usize).cloned()).unwrap();
+            Message::GetSummary { poll, tx } => {
+                tx.send(polls.get(poll as usize).map(|poll| poll.into()))
+                    .unwrap();
             }
-            Message::Subscribe { poll: poll_id, tx } => {
+            Message::PollVotes { poll: poll_id, tx } => {
                 // Send initial state
                 let Some(poll) = polls.get(poll_id as usize) else {
                     return;
                 };
-                tx.send(poll.options.clone()).await.unwrap();
+                tx.send(poll.votes.clone()).await.unwrap();
 
                 // Save the subscription
                 subscriptions.push((poll_id, tx));
@@ -207,7 +237,7 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                     return tx.send(false).unwrap();
                 };
 
-                let Some(option) = poll.options.get_mut(&option) else {
+                let Some(option) = poll.votes.get_mut(option as usize) else {
                     return tx.send(false).unwrap();
                 };
 
@@ -218,13 +248,14 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                 subscriptions
                     .iter()
                     .filter(|(id, _)| *id == poll.id)
-                    .map(|(_, tx)| tx.send(poll.options.clone()))
+                    .map(|(_, tx)| tx.send(poll.votes.clone()))
                     .collect::<FuturesUnordered<_>>()
                     .for_each_concurrent(None, |r| async move { r.unwrap() })
                     .await;
 
                 tx.send(true).unwrap();
             }
+            Message::SubscribeSummary { tx } => todo!(),
         }
     }
 }

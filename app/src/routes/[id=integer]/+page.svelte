@@ -1,13 +1,12 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
-	import { total_votes } from '$lib/poll.js';
 	import { create_result_store } from '$lib/result_store.js';
-	import type { Poll } from '$lib/server.js';
+	import type { PollSummary } from '$lib/server.js';
 
 	export let data;
 
-	let poll: Promise<Poll | null>;
+	let poll: Promise<PollSummary | null>;
 	let vote: number | undefined;
 
 	$: results = create_result_store(data.id);
@@ -25,18 +24,22 @@
 	}
 
 	async function make_vote() {
-		await api.polls.vote(data.id, Object.keys((await poll)!.options)[vote!]);
+		if (vote === undefined) {
+			return;
+		}
+
+		await api.polls.vote(data.id, vote);
 	}
 </script>
 
 {#await poll then poll}
 	{#if poll}
-		{@const poll_votes = total_votes($results)}
+		{@const poll_votes = $results.reduce((total, vote) => total + vote, 0)}
 
 		<Card title={poll.name} description={poll.description}>
 			<form on:submit|preventDefault={make_vote}>
-				{#each Object.entries($results) as [option, votes], i}
-					{@const p = (votes / (poll_votes || 1)) * 100}
+				{#each poll.options as option, i}
+					{@const p = ($results[i] / (poll_votes || 1)) * 100}
 
 					<label class="btn" style:--fill={`${p}%`}>
 						<input type="radio" name={`${poll.id}-value`} value={i} bind:group={vote} />

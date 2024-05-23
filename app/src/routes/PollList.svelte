@@ -1,10 +1,9 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
-	import type { Poll } from '$lib/server';
-	import { total_votes } from '$lib/poll';
+	import type { PollSummary } from '$lib/server';
 	import { PieChart, Plus } from 'lucide-svelte';
 
-	export let poll_list: Poll[];
+	export let poll_list: PollSummary[];
 </script>
 
 <div class="container">
@@ -16,7 +15,8 @@
 						<PieChart size="1rem" />
 					</div>
 
-					<span>{Object.keys(poll.options).length} options, {total_votes(poll.options)} votes</span>
+					<!-- TODO: Calculate number of votes -->
+					<span>{poll.options.length} options, {0} votes</span>
 				</div>
 			</Card>
 		</a>
