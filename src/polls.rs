@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use futures::Stream;
 use qubit::{handler, Router};
 
 use crate::{poll_manager::Poll, Ctx};
@@ -19,6 +22,21 @@ async fn get(ctx: Ctx, id: u32) -> Option<Poll> {
     ctx.poll_manager.get_poll(id).await
 }
 
+#[handler]
+async fn vote(ctx: Ctx, poll: u32, option: String) {
+    ctx.poll_manager.vote(poll, option).await;
+}
+
+#[handler(subscription)]
+async fn subscribe(ctx: Ctx, poll: u32) -> impl Stream<Item = HashMap<String, usize>> {
+    ctx.poll_manager.subscribe(poll).await
+}
+
 pub fn init() -> Router<Ctx> {
-    Router::new().handler(list).handler(create).handler(get)
+    Router::new()
+        .handler(list)
+        .handler(create)
+        .handler(get)
+        .handler(vote)
+        .handler(subscribe)
 }

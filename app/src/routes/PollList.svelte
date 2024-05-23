@@ -16,7 +16,7 @@
 						<PieChart size="1rem" />
 					</div>
 
-					<span>{Object.keys(poll.options).length} options, {total_votes(poll)} votes</span>
+					<span>{Object.keys(poll.options).length} options, {total_votes(poll.options)} votes</span>
 				</div>
 			</Card>
 		</a>

@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 
+use futures::{
+    stream::{self, FuturesUnordered},
+    Stream, StreamExt,
+};
 use qubit::TypeDependencies;
 use serde::Serialize;
 use tokio::sync::{mpsc, oneshot};
@@ -67,6 +71,29 @@ impl PollManager {
     pub async fn get_poll(&self, id: u32) -> Option<Poll> {
         send_message!(self, GetPoll { id: id })
     }
+
+    /// Vote for the given option on a poll.
+    pub async fn vote(&self, poll: u32, option: String) -> bool {
+        send_message!(
+            self,
+            Vote {
+                poll: poll,
+                option: option
+            }
+        )
+    }
+
+    /// Subscribe to vote changes on the given stream
+    pub async fn subscribe(&self, poll: u32) -> impl Stream<Item = HashMap<String, usize>> {
+        // Setup the channel
+        let (tx, rx) = mpsc::channel(10);
+
+        // Send it to the manager
+        self.tx.send(Message::Subscribe { poll, tx }).await.unwrap();
+
+        // Turn the resulting channel into a stream
+        stream::unfold(rx, |mut rx| async move { Some((rx.recv().await?, rx)) })
+    }
 }
 
 /// All possible message variations.
@@ -87,6 +114,19 @@ enum Message {
     GetPoll {
         id: u32,
         tx: oneshot::Sender<Option<Poll>>,
+    },
+
+    /// Subscribe to vote changes on a given poll
+    Subscribe {
+        poll: u32,
+        tx: mpsc::Sender<HashMap<String, usize>>,
+    },
+
+    /// Vote on a poll
+    Vote {
+        poll: u32,
+        option: String,
+        tx: oneshot::Sender<bool>,
     },
 }
 
@@ -126,6 +166,8 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
         },
     ];
 
+    let mut subscriptions = Vec::new();
+
     while let Some(message) = rx.recv().await {
         match message {
             Message::ListPolls { tx } => {
@@ -149,6 +191,32 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
             }
             Message::GetPoll { id, tx } => {
                 tx.send(polls.get(id as usize).cloned()).unwrap();
+            }
+            Message::Subscribe { poll, tx } => {
+                subscriptions.push((poll, tx));
+            }
+            Message::Vote { poll, option, tx } => {
+                let Some(poll) = polls.get_mut(poll as usize) else {
+                    return tx.send(false).unwrap();
+                };
+
+                let Some(option) = poll.options.get_mut(&option) else {
+                    return tx.send(false).unwrap();
+                };
+
+                // Increment the vote
+                *option += 1;
+
+                // Notify subscribers
+                subscriptions
+                    .iter()
+                    .filter(|(id, _)| *id == poll.id)
+                    .map(|(_, tx)| tx.send(poll.options.clone()))
+                    .collect::<FuturesUnordered<_>>()
+                    .for_each_concurrent(None, |r| async move { r.unwrap() })
+                    .await;
+
+                tx.send(true).unwrap();
             }
         }
     }

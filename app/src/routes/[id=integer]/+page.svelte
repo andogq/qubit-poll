@@ -3,29 +3,64 @@
 	import api from '$lib/api';
 	import { total_votes } from '$lib/poll.js';
 	import type { Poll } from '$lib/server.js';
+	import { onDestroy } from 'svelte';
 
 	export let data;
 
 	let poll: Promise<Poll | null>;
 	let vote: number | undefined;
+	let results: Record<string, number> = {};
+
+	let cancel_subscription: () => void | undefined;
 
 	$: {
+		// Get the poll information
 		poll = api.polls.get(data.id);
+
+		// Capture initial results when poll loads
+		poll.then((poll) => {
+			results = poll!.options;
+		});
+
+		// Stop any on-going subscription
+		if (cancel_subscription) {
+			cancel_subscription();
+		}
+
+		// Subscribe to vote changes
+		cancel_subscription = api.polls.subscribe(data.id).subscribe({
+			on_data: (votes) => {
+				// Save incomming vote information
+				results = votes;
+			}
+		});
+
+		// Clear any selection
 		reset_vote();
 	}
 
+	onDestroy(() => {
+		if (cancel_subscription) {
+			cancel_subscription();
+		}
+	});
+
 	function reset_vote() {
 		vote = undefined;
+	}
+
+	async function make_vote() {
+		await api.polls.vote(data.id, Object.keys((await poll)!.options)[vote!]);
 	}
 </script>
 
 {#await poll then poll}
 	{#if poll}
-		{@const poll_votes = total_votes(poll)}
+		{@const poll_votes = total_votes(results)}
 
 		<Card title={poll.name} description={poll.description}>
-			<form on:submit|preventDefault>
-				{#each Object.entries(poll.options) as [option, votes], i}
+			<form on:submit|preventDefault={make_vote}>
+				{#each Object.entries(results) as [option, votes], i}
 					{@const p = (votes / (poll_votes || 1)) * 100}
 
 					<label class="btn" style:--fill={`${p}%`}>
@@ -50,6 +85,8 @@
 {/await}
 
 <style>
+	@import 'open-props/media';
+
 	form {
 		display: flex;
 		flex-direction: column;
@@ -66,6 +103,10 @@
 		}
 
 		--poll-color: var(--blue-1);
+
+		@media (--OSdark) {
+			--poll-color: var(--blue-9);
+		}
 
 		background: linear-gradient(
 			to right,
