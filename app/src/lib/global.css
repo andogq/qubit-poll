@@ -1,0 +1,6 @@
+@import 'open-props/postcss/style';
+@import 'open-props/postcss/normalize';
+
+html, body {
+    font-family: 'Poppins', sans-serif;
+}

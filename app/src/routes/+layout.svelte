@@ -1,4 +1,6 @@
 <script lang="ts">
+	import '$lib/global.css';
+
 	import { ws } from '@qubit-rs/client';
 	import type { Server } from '$lib/api';
 	import PollList from './PollList.svelte';
@@ -29,10 +31,6 @@
 </main>
 
 <style>
-	:global(html, body) {
-		font-family: 'Poppins', sans-serif;
-	}
-
 	main {
 		padding: var(--size-10) var(--size-11);
 
