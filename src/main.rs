@@ -28,7 +28,7 @@ async fn main() {
     let app = setup_router();
 
     println!("Generating types");
-    app.write_type_to_file("./app/src/lib/api.ts");
+    app.write_type_to_file("./app/src/lib/server.ts");
 
     let ctx = Ctx {
         poll_manager: PollManager::new(),

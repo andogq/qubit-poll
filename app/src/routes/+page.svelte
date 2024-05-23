@@ -1,15 +1,12 @@
-<script lang="ts">
-	import { ws } from '@qubit-rs/client';
-	import type { Server } from '$lib/api';
+<span>Select a poll to view results and vote.</span>
 
-	const api = ws<Server>('ws://localhost:3030/api');
-
-	let poll_name: string;
-	let poll_description: string;
-	let poll_options: string[] = [];
-	async function create_poll() {
-		await api.polls.create(poll_name, poll_description, poll_options);
-		poll_name = '';
-		poll_options = [];
+<style>
+	span {
+		color: var(--text-2);
+		font-style: italic;
+		font-size: var(--font-size-1);
+		text-align: center;
+		width: 100%;
+		display: block;
 	}
-</script>
+</style>

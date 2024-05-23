@@ -60,6 +60,11 @@ impl PollManager {
             }
         )
     }
+
+    /// Get a poll with the provided ID.
+    pub async fn get_poll(&self, id: u32) -> Option<Poll> {
+        send_message!(self, GetPoll { id: id })
+    }
 }
 
 /// All possible message variations.
@@ -75,10 +80,17 @@ enum Message {
         options: Vec<String>,
         tx: oneshot::Sender<u32>,
     },
+
+    /// Get a poll with the given ID.
+    GetPoll {
+        id: u32,
+        tx: oneshot::Sender<Option<Poll>>,
+    },
 }
 
 #[derive(Clone, Debug, TS, Serialize, TypeDependencies)]
 pub struct Poll {
+    id: u32,
     name: String,
     description: String,
     options: Vec<String>,
@@ -87,24 +99,28 @@ pub struct Poll {
 async fn manager(mut rx: mpsc::Receiver<Message>) {
     let mut polls = vec![
         Poll {
+            id: 0,
             name: "Favourite color".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: Vec::new(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
         },
         Poll {
+            id: 1,
             name: "Best food".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: Vec::new(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
         },
         Poll {
+            id: 2,
             name: "Favourite color".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: Vec::new(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
         },
         Poll {
+            id: 3,
             name: "Best food".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: Vec::new(),
+            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
         },
     ];
 
@@ -121,12 +137,16 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
             } => {
                 let id = polls.len() as u32;
                 polls.push(Poll {
+                    id,
                     name,
                     description,
                     options,
                 });
 
                 tx.send(id).unwrap();
+            }
+            Message::GetPoll { id, tx } => {
+                tx.send(polls.get(id as usize).cloned()).unwrap();
             }
         }
     }

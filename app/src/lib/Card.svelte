@@ -19,6 +19,8 @@
 		border: var(--border-size-1) solid var(--surface-4);
 
 		padding: var(--size-5);
+
+		background: var(--surface-1);
 	}
 
 	.header {
