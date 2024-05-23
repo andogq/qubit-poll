@@ -14,31 +14,34 @@ impl Subscriptions {
     /// Register a new `poll` subscription.
     pub async fn register_poll(&mut self, tx: mpsc::Sender<Vec<usize>>, poll: &Poll) {
         // Send the initial state
-        tx.send(poll.votes.clone()).await.unwrap();
-
-        self.poll.push((poll.id, tx));
+        if tx.send(poll.votes.clone()).await.is_ok() {
+            // Only store channel if it succeeds
+            self.poll.push((poll.id, tx));
+        }
     }
 
     /// Register a new `poll_total` subscription.
     pub async fn register_poll_total(&mut self, tx: mpsc::Sender<Vec<usize>>, polls: &[Poll]) {
         // Send the initial state
-        tx.send(Self::poll_totals(polls)).await.unwrap();
-
-        self.poll_total.push(tx);
+        if tx.send(Self::poll_totals(polls)).await.is_ok() {
+            // Only store channel if it succeeds
+            self.poll_total.push(tx);
+        }
     }
 
     /// Register a new `overview` subscription.
     pub async fn register_overview(&mut self, tx: mpsc::Sender<Vec<PollOverview>>, polls: &[Poll]) {
         // Send the initial state
-        tx.send(polls.iter().map(|poll| poll.into()).collect())
-            .await
-            .unwrap();
-
-        self.overview.push(tx);
+        if tx.send(Self::poll_overviews(polls)).await.is_ok() {
+            // Only store channel if it succeeds
+            self.overview.push(tx);
+        }
     }
 
     /// Update all `poll` subscriptions.
-    pub async fn update_poll(&self, poll: &Poll) {
+    pub async fn update_poll(&mut self, poll: &Poll) {
+        self.poll.retain(|(_, tx)| !tx.is_closed());
+
         self.poll
             .iter()
             .filter(|(id, _)| *id == poll.id)
@@ -53,8 +56,10 @@ impl Subscriptions {
     }
 
     /// Update all `poll_total` subscriptions.
-    pub async fn update_poll_total(&self, polls: &[Poll]) {
+    pub async fn update_poll_total(&mut self, polls: &[Poll]) {
         let totals = Self::poll_totals(polls);
+
+        self.poll_total.retain(|tx| !tx.is_closed());
 
         self.poll_total
             .iter()
@@ -68,8 +73,10 @@ impl Subscriptions {
     }
 
     /// Update all `overview` subscriptions.
-    pub async fn update_overview(&self, polls: &[Poll]) {
-        let overview = polls.iter().map(|p| p.into()).collect::<Vec<_>>();
+    pub async fn update_overview(&mut self, polls: &[Poll]) {
+        let overview = Self::poll_overviews(polls);
+
+        self.overview.retain(|tx| !tx.is_closed());
 
         self.overview
             .iter()
@@ -88,5 +95,9 @@ impl Subscriptions {
             .iter()
             .map(|poll| poll.votes.iter().sum())
             .collect::<Vec<_>>()
+    }
+
+    fn poll_overviews(polls: &[Poll]) -> Vec<PollOverview> {
+        polls.iter().map(|poll| poll.into()).collect()
     }
 }
