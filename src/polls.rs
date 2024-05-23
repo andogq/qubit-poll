@@ -16,17 +16,17 @@ async fn create(ctx: Ctx, name: String, description: String, options: Vec<String
 }
 
 #[handler]
-async fn get(ctx: Ctx, id: u32) -> Option<PollSummary> {
+async fn get(ctx: Ctx, id: usize) -> Option<PollSummary> {
     ctx.poll_manager.get_poll(id).await
 }
 
 #[handler]
-async fn vote(ctx: Ctx, poll: u32, option: u32) {
+async fn vote(ctx: Ctx, poll: usize, option: usize) {
     ctx.poll_manager.vote(poll, option).await;
 }
 
 #[handler(subscription)]
-async fn poll_votes(ctx: Ctx, poll: u32) -> impl Stream<Item = Vec<usize>> {
+async fn poll_votes(ctx: Ctx, poll: usize) -> impl Stream<Item = Vec<usize>> {
     ctx.poll_manager.poll_votes(poll).await
 }
 
