@@ -8,7 +8,15 @@
 
 	const api = ws<Server>('ws://localhost:3030/api');
 
+	let poll_form: PollForm;
 	let poll_list = api.polls.list();
+
+	async function create_poll(
+		e: CustomEvent<{ name: string; description: string; options: string[] }>
+	) {
+		await api.polls.create(e.detail.name, e.detail.description, e.detail.options);
+		poll_form.clear();
+	}
 </script>
 
 <main>
@@ -27,7 +35,7 @@
 		<slot />
 	</div>
 
-	<PollForm />
+	<PollForm bind:this={poll_form} on:submit={create_poll} />
 </main>
 
 <style>

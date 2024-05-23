@@ -7,10 +7,7 @@
 </script>
 
 {#each poll_list as poll}
-	<Card>
-		<h2>{poll.name}</h2>
-		<p>{poll.description}</p>
-
+	<Card title={poll.name} description={poll.description}>
 		<div class="summary">
 			<div class="icon">
 				<PieChart size="1rem" />
@@ -22,10 +19,6 @@
 {/each}
 
 <style>
-	h2 {
-		font-size: var(--font-size-5);
-	}
-
 	.summary {
 		display: flex;
 		flex-direction: row;

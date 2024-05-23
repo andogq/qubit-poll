@@ -2,60 +2,95 @@
 	import Card from '$lib/Card.svelte';
 	import { createEventDispatcher } from 'svelte';
 
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<{
+		submit: { name: string; description: string; options: string[] };
+	}>();
 
 	let name: string;
 	let description: string;
-	let options: string[] = [];
+	let options: string[] = [''];
 
-	let poll_option: string;
-	function append_option() {
-		options.push(poll_option);
+	// Always make sure there's a new option at the end of the list
+	$: if (options[options.length - 1] !== '') {
+		options.push('');
 		options = options;
-		poll_option = '';
 	}
-	function remove_option(i: number) {
-		options.splice(i, 1);
+
+	$: valid = name && description && options.length > 1;
+
+	function filter_options() {
+		options = options.filter((value) => value.length > 0);
+		options.push('');
 		options = options;
 	}
 
 	function create_poll() {
-		dispatch('submit', { name, description, options });
+		dispatch('submit', { name, description, options: options.slice(0, options.length - 1) });
+	}
+
+	export function clear() {
+		name = '';
+		description = '';
+		options = [];
 	}
 </script>
 
-<Card>
-	<h2>Create Poll</h2>
+<Card title="Create Poll" description="Fill out the form to create a new poll.">
+	<form>
+		<label>
+			<span>Poll Name</span>
+			<input type="text" bind:value={name} placeholder="Enter poll name" />
+		</label>
 
-	<p>Fill out the form to create a new poll.</p>
+		<label>
+			<span>Poll Description</span>
+			<textarea bind:value={description} placeholder="Enter poll description"></textarea>
+		</label>
 
-	<label>
-		<span>Poll Name</span>
-		<input type="text" bind:value={name} placeholder="Enter poll time" />
-	</label>
+		<div class="options">
+			<span>Poll Options</span>
 
-	<label>
-		<span>Poll Description</span>
-		<textarea bind:value={description} placeholder="Enter poll description"></textarea>
-	</label>
+			{#each options as o}
+				<input type="text" bind:value={o} placeholder="New Option" on:blur={filter_options} />
+			{/each}
+		</div>
 
-	<br />
-
-	<ul>
-		{#each options as option, i}
-			<button on:click={() => remove_option(i)}>x</button>
-			<ol>{option}</ol>
-		{/each}
-	</ul>
-
-	<label>
-		<span>Option</span>
-		<input type="text" bind:value={poll_option} placeholder="Option 1" />
-	</label>
-
-	<button on:click={append_option}>Add</button>
-
-	<br />
-
-	<button on:click={create_poll}>Create</button>
+		<button on:click={create_poll} type="submit" disabled={!valid}>Create</button>
+	</form>
 </Card>
+
+<style>
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--size-3);
+
+		& > label {
+			width: 100%;
+
+			& > span {
+				display: block;
+				margin-bottom: var(--size-2);
+			}
+
+			& > input,
+			& > textarea {
+				width: 100%;
+			}
+		}
+
+		& > button[type='submit'] {
+			width: 100%;
+		}
+	}
+
+	.options {
+		display: flex;
+		flex-direction: column;
+		gap: var(--size-2);
+
+		& > * {
+			width: 100%;
+		}
+	}
+</style>
