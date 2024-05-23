@@ -1,19 +1,11 @@
 mod poll_manager;
 mod polls;
 
-use std::{
-    collections::HashMap,
-    net::{Ipv4Addr, SocketAddr},
-};
+use std::net::{Ipv4Addr, SocketAddr};
 
 use axum::routing::get;
 use poll_manager::PollManager;
 use qubit::{handler, Router};
-
-pub struct Poll {
-    pub question: String,
-    pub votes: HashMap<String, usize>,
-}
 
 #[derive(Clone)]
 pub struct Ctx {

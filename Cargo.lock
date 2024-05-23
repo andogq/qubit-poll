@@ -36,6 +36,8 @@ dependencies = [
  "axum",
  "hyper",
  "qubit",
+ "serde",
+ "serde_json",
  "tokio",
  "ts-rs",
 ]
@@ -676,8 +678,6 @@ dependencies = [
 [[package]]
 name = "qubit"
 version = "0.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8276ddc4022eeea7553f8a4bbd9230d21cb1006651238421b17801f1556ad4b5"
 dependencies = [
  "axum",
  "futures",
@@ -695,8 +695,6 @@ dependencies = [
 [[package]]
 name = "qubit-macros"
 version = "0.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "affcf68d0bc63eb05330f6918ca48f30bcb34abd884565541d1a607317f186e2"
 dependencies = [
  "proc-macro2",
  "quote",
