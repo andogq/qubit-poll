@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
-	import { create_overview_store, stream_store } from '$lib/store';
+	import { stream_store } from '$lib/store';
 	import { PieChart, Plus } from 'lucide-svelte';
 
-	let overview = create_overview_store();
-	let poll_totals = stream_store(api.polls.poll_totals(), []);
+	let overview = stream_store(api.stream.overview(), []);
+	let poll_totals = stream_store(api.stream.poll_total(), []);
 </script>
 
 <div class="container">

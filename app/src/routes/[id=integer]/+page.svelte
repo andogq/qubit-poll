@@ -1,19 +1,19 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
-	import { create_result_store } from '$lib/store.js';
-	import type { PollSummary } from '$lib/server.js';
+	import type { PollOverview } from '$lib/server.js';
+	import { stream_store } from '$lib/store.js';
 
 	export let data;
 
-	let poll: Promise<PollSummary | null>;
+	let poll: Promise<PollOverview | null>;
 	let vote: number | undefined;
 
-	$: results = create_result_store(data.id);
+	$: results = stream_store(api.stream.poll(data.id), []);
 
 	$: {
 		// Get the poll information
-		poll = api.polls.get(data.id);
+		poll = api.get_summary(data.id);
 
 		// Clear any selection
 		reset_vote();
@@ -28,7 +28,7 @@
 			return;
 		}
 
-		await api.polls.vote(data.id, vote);
+		await api.vote(data.id, vote);
 	}
 </script>
 

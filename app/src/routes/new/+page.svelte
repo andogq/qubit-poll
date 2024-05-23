@@ -7,7 +7,7 @@
 	async function create_poll(
 		e: CustomEvent<{ name: string; description: string; options: string[] }>
 	) {
-		await api.polls.create(e.detail.name, e.detail.description, e.detail.options);
+		await api.create(e.detail.name, e.detail.description, e.detail.options);
 		poll_form.clear();
 	}
 </script>

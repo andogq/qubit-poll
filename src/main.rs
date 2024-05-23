@@ -1,15 +1,17 @@
-mod poll_manager;
+mod manager;
 mod polls;
 
 use std::net::{Ipv4Addr, SocketAddr};
 
 use axum::routing::get;
-use poll_manager::PollManager;
+use manager::Client;
 use qubit::{handler, Router};
+
+use crate::manager::Manager;
 
 #[derive(Clone)]
 pub struct Ctx {
-    pub poll_manager: PollManager,
+    pub client: Client,
 }
 
 #[handler]
@@ -18,9 +20,7 @@ async fn hello_world(_ctx: Ctx) -> String {
 }
 
 fn setup_router() -> Router<Ctx> {
-    Router::new()
-        .handler(hello_world)
-        .nest("polls", polls::init())
+    polls::init().handler(hello_world)
 }
 
 #[tokio::main]
@@ -31,7 +31,8 @@ async fn main() {
     app.write_type_to_file("./app/src/lib/server.ts");
 
     let ctx = Ctx {
-        poll_manager: PollManager::new(),
+        // Start the manager
+        client: Manager::start(),
     };
 
     let (app_service, app_handle) = app.to_service(move |_| ctx.clone());

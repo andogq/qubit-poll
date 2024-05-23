@@ -1,52 +1,61 @@
-use futures::Stream;
 use qubit::{handler, Router};
 
-use crate::{poll_manager::PollSummary, Ctx};
+use crate::{manager::PollOverview, Ctx};
 
 #[handler]
-async fn list(ctx: Ctx) -> Vec<PollSummary> {
-    ctx.poll_manager.list_polls().await
+async fn get_summaries(ctx: Ctx) -> Vec<PollOverview> {
+    ctx.client.get_summaries().await
+}
+
+#[handler]
+async fn get_summary(ctx: Ctx, id: usize) -> Option<PollOverview> {
+    ctx.client.get_summary(id).await
 }
 
 #[handler]
 async fn create(ctx: Ctx, name: String, description: String, options: Vec<String>) {
-    ctx.poll_manager
-        .create_poll(name, description, options)
-        .await;
-}
-
-#[handler]
-async fn get(ctx: Ctx, id: usize) -> Option<PollSummary> {
-    ctx.poll_manager.get_poll(id).await
+    ctx.client.create(name, description, options).await;
 }
 
 #[handler]
 async fn vote(ctx: Ctx, poll: usize, option: usize) {
-    ctx.poll_manager.vote(poll, option).await;
+    ctx.client.vote(poll, option).await;
 }
 
-#[handler(subscription)]
-async fn poll_votes(ctx: Ctx, poll: usize) -> impl Stream<Item = Vec<usize>> {
-    ctx.poll_manager.poll_votes(poll).await
-}
+mod stream {
+    use futures::Stream;
+    use qubit::{handler, Router};
 
-#[handler(subscription)]
-async fn poll_totals(ctx: Ctx) -> impl Stream<Item = Vec<usize>> {
-    ctx.poll_manager.poll_totals().await
-}
+    use crate::{manager::PollOverview, Ctx};
 
-#[handler(subscription)]
-async fn overview(ctx: Ctx) -> impl Stream<Item = Vec<PollSummary>> {
-    ctx.poll_manager.overview().await
+    #[handler(subscription)]
+    async fn poll(ctx: Ctx, poll_id: usize) -> impl Stream<Item = Vec<usize>> {
+        ctx.client.stream_poll(poll_id).await
+    }
+
+    #[handler(subscription)]
+    async fn poll_total(ctx: Ctx) -> impl Stream<Item = Vec<usize>> {
+        ctx.client.stream_poll_total().await
+    }
+
+    #[handler(subscription)]
+    async fn overview(ctx: Ctx) -> impl Stream<Item = Vec<PollOverview>> {
+        ctx.client.stream_overview().await
+    }
+
+    pub fn init() -> Router<Ctx> {
+        Router::new()
+            .handler(poll)
+            .handler(poll_total)
+            .handler(overview)
+    }
 }
 
 pub fn init() -> Router<Ctx> {
     Router::new()
-        .handler(list)
+        .handler(get_summaries)
         .handler(create)
-        .handler(get)
+        .handler(get_summary)
         .handler(vote)
-        .handler(poll_votes)
-        .handler(poll_totals)
-        .handler(overview)
+        .nest("stream", stream::init())
 }

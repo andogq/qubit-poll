@@ -1,3 +1,3 @@
 import type { Stream } from "@qubit-rs/client";
-export type PollSummary = { id: number, name: string, description: string, options: Array<string>, };
-export type Server = { hello_world: () => Promise<string>, polls: { list: () => Promise<Array<PollSummary>>, create: (name: string, description: string, options: Array<string>) => Promise<null>, get: (id: number) => Promise<PollSummary | null>, vote: (poll: number, option: number) => Promise<null>, poll_votes: (poll: number) => Stream<Array<number>>, poll_totals: () => Stream<Array<number>>, overview: () => Stream<Array<PollSummary>> } };
+export type PollOverview = { id: number, name: string, description: string, options: Array<string>, };
+export type Server = { get_summaries: () => Promise<Array<PollOverview>>, create: (name: string, description: string, options: Array<string>) => Promise<null>, get_summary: (id: number) => Promise<PollOverview | null>, vote: (poll: number, option: number) => Promise<null>, hello_world: () => Promise<string>, stream: { poll: (poll_id: number) => Stream<Array<number>>, poll_total: () => Stream<Array<number>>, overview: () => Stream<Array<PollOverview>> } };
