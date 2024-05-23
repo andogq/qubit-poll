@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
+	import { total_votes } from '$lib/poll.js';
 	import type { Poll } from '$lib/server.js';
 
 	export let data;
@@ -20,14 +21,20 @@
 
 {#await poll then poll}
 	{#if poll}
+		{@const poll_votes = total_votes(poll)}
+
 		<Card title={poll.name} description={poll.description}>
 			<form on:submit|preventDefault>
-				{#each poll.options as option, i}
-					<label class="btn">
+				{#each Object.entries(poll.options) as [option, votes], i}
+					{@const p = (votes / (poll_votes || 1)) * 100}
+
+					<label class="btn" style:--fill={`${p}%`}>
 						<input type="radio" name={`${poll.id}-value`} value={i} bind:group={vote} />
 						<span>
 							{option}
 						</span>
+
+						<span>{Math.round(p)}%</span>
 					</label>
 				{/each}
 
@@ -57,5 +64,15 @@
 		&:not(:has(input:checked)) > span {
 			font-weight: normal;
 		}
+
+		--poll-color: var(--blue-1);
+
+		background: linear-gradient(
+			to right,
+			var(--poll-color),
+			var(--poll-color) var(--fill),
+			transparent var(--fill),
+			transparent 100%
+		);
 	}
 </style>

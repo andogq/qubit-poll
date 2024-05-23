@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use qubit::TypeDependencies;
 use serde::Serialize;
 use tokio::sync::{mpsc, oneshot};
@@ -93,7 +95,7 @@ pub struct Poll {
     id: u32,
     name: String,
     description: String,
-    options: Vec<String>,
+    options: HashMap<String, usize>,
 }
 
 async fn manager(mut rx: mpsc::Receiver<Message>) {
@@ -102,25 +104,25 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
             id: 0,
             name: "Favourite color".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
         },
         Poll {
             id: 1,
             name: "Best food".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
         },
         Poll {
             id: 2,
             name: "Favourite color".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
         },
         Poll {
             id: 3,
             name: "Best food".to_string(),
             description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-            options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
+            options: ["Option A", "Option B", "Option C", "Option D"].into_iter().enumerate().map(|(i, s)| (s.to_string(), i)).collect(),
         },
     ];
 
@@ -140,7 +142,7 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                     id,
                     name,
                     description,
-                    options,
+                    options: options.into_iter().map(|s| (s, 0)).collect(),
                 });
 
                 tx.send(id).unwrap();
