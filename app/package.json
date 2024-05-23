@@ -37,7 +37,7 @@
 	],
 	"type": "module",
 	"dependencies": {
-		"@qubit-rs/client": "^0.0.4",
+		"@qubit-rs/client": "^0.0.5",
 		"lucide-svelte": "^0.379.0"
 	}
 }
