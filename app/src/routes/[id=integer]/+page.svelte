@@ -28,7 +28,8 @@
 			return;
 		}
 
-		await api.vote(data.id, vote);
+		api.vote(data.id, vote);
+		reset_vote();
 	}
 </script>
 
