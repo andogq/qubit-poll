@@ -92,6 +92,26 @@ impl PollManager {
         // Turn the resulting channel into a stream
         stream::unfold(rx, |mut rx| async move { Some((rx.recv().await?, rx)) })
     }
+
+    /// Return a stream of vote results, which will emit new values whenever a poll changes.
+    pub async fn overview(&self) -> impl Stream<Item = Vec<PollSummary>> {
+        let (tx, rx) = mpsc::channel(10);
+
+        self.tx.send(Message::Overview { tx }).await.unwrap();
+
+        // Stream back the overview results
+        stream::unfold(rx, |mut rx| async move { Some((rx.recv().await?, rx)) })
+    }
+
+    /// Return a stream of poll totals.
+    pub async fn poll_totals(&self) -> impl Stream<Item = Vec<usize>> {
+        let (tx, rx) = mpsc::channel(10);
+
+        self.tx.send(Message::PollTotals { tx }).await.unwrap();
+
+        // Stream back the overview results
+        stream::unfold(rx, |mut rx| async move { Some((rx.recv().await?, rx)) })
+    }
 }
 
 /// All possible message variations.
@@ -122,8 +142,11 @@ enum Message {
         tx: mpsc::Sender<Vec<usize>>,
     },
 
-    /// Subscribe to a summary of all polls, to be notified of the total vote count for each poll.
-    SubscribeSummary { tx: mpsc::Sender<Vec<usize>> },
+    /// Subscribe to an overview of all polls.
+    Overview { tx: mpsc::Sender<Vec<PollSummary>> },
+
+    /// Subscribe to a list of all poll totals.
+    PollTotals { tx: mpsc::Sender<Vec<usize>> },
 
     /// Vote on a poll.
     Vote {
@@ -193,7 +216,9 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
         },
     ];
 
-    let mut subscriptions = Vec::new();
+    let mut poll_subscriptions = Vec::new();
+    let mut poll_total_subscriptions = Vec::new();
+    let mut overview_subscriptions = Vec::new();
 
     while let Some(message) = rx.recv().await {
         match message {
@@ -217,6 +242,35 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                 });
 
                 tx.send(id).unwrap();
+
+                // Generate poll overview and totals
+                let (overview, totals): (Vec<_>, Vec<_>) = polls
+                    .iter()
+                    .map(|poll| (poll.into(), poll.votes.iter().sum::<usize>()))
+                    .unzip();
+
+                // Update overview
+                overview_subscriptions
+                    .iter()
+                    .map(|tx: &mpsc::Sender<_>| {
+                        let overview = overview.clone();
+
+                        async move { tx.send(overview).await.unwrap() }
+                    })
+                    .collect::<FuturesUnordered<_>>()
+                    .collect::<()>()
+                    .await;
+
+                // Update poll totals
+                poll_total_subscriptions
+                    .iter()
+                    .map(|tx: &mpsc::Sender<_>| {
+                        let totals = totals.clone();
+                        async move { tx.send(totals).await.unwrap() }
+                    })
+                    .collect::<FuturesUnordered<_>>()
+                    .collect::<()>()
+                    .await;
             }
             Message::GetSummary { poll, tx } => {
                 tx.send(polls.get(poll as usize).map(|poll| poll.into()))
@@ -230,7 +284,7 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                 tx.send(poll.votes.clone()).await.unwrap();
 
                 // Save the subscription
-                subscriptions.push((poll_id, tx));
+                poll_subscriptions.push((poll_id, tx));
             }
             Message::Vote { poll, option, tx } => {
                 let Some(poll) = polls.get_mut(poll as usize) else {
@@ -245,17 +299,53 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
                 *option += 1;
 
                 // Notify subscribers
-                subscriptions
+                poll_subscriptions
                     .iter()
                     .filter(|(id, _)| *id == poll.id)
-                    .map(|(_, tx)| tx.send(poll.votes.clone()))
+                    .map(|(_, tx)| {
+                        let votes = poll.votes.clone();
+
+                        async move { tx.send(votes).await.unwrap() }
+                    })
                     .collect::<FuturesUnordered<_>>()
-                    .for_each_concurrent(None, |r| async move { r.unwrap() })
+                    .collect::<()>()
+                    .await;
+
+                let totals = polls
+                    .iter()
+                    .map(|poll| poll.votes.iter().sum())
+                    .collect::<Vec<_>>();
+                poll_total_subscriptions
+                    .iter()
+                    .map(|tx: &mpsc::Sender<_>| {
+                        let totals = totals.clone();
+                        async move { tx.send(totals).await.unwrap() }
+                    })
+                    .collect::<FuturesUnordered<_>>()
+                    .collect::<()>()
                     .await;
 
                 tx.send(true).unwrap();
             }
-            Message::SubscribeSummary { tx } => todo!(),
+            Message::Overview { tx } => {
+                // Send inital state
+                tx.send(polls.iter().map(|poll| poll.into()).collect())
+                    .await
+                    .unwrap();
+
+                // Store subscription
+                overview_subscriptions.push(tx);
+            }
+
+            Message::PollTotals { tx } => {
+                // Send initial state
+                tx.send(polls.iter().map(|poll| poll.votes.iter().sum()).collect())
+                    .await
+                    .unwrap();
+
+                // Save subscription
+                poll_total_subscriptions.push(tx);
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
-	import { create_result_store } from '$lib/result_store.js';
+	import { create_result_store } from '$lib/store.js';
 	import type { PollSummary } from '$lib/server.js';
 
 	export let data;

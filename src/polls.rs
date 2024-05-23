@@ -30,6 +30,16 @@ async fn poll_votes(ctx: Ctx, poll: u32) -> impl Stream<Item = Vec<usize>> {
     ctx.poll_manager.poll_votes(poll).await
 }
 
+#[handler(subscription)]
+async fn poll_totals(ctx: Ctx) -> impl Stream<Item = Vec<usize>> {
+    ctx.poll_manager.poll_totals().await
+}
+
+#[handler(subscription)]
+async fn overview(ctx: Ctx) -> impl Stream<Item = Vec<PollSummary>> {
+    ctx.poll_manager.overview().await
+}
+
 pub fn init() -> Router<Ctx> {
     Router::new()
         .handler(list)
@@ -37,4 +47,6 @@ pub fn init() -> Router<Ctx> {
         .handler(get)
         .handler(vote)
         .handler(poll_votes)
+        .handler(poll_totals)
+        .handler(overview)
 }

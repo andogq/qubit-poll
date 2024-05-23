@@ -1,13 +1,15 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
-	import type { PollSummary } from '$lib/server';
+	import api from '$lib/api';
+	import { create_overview_store, stream_store } from '$lib/store';
 	import { PieChart, Plus } from 'lucide-svelte';
 
-	export let poll_list: PollSummary[];
+	let overview = create_overview_store();
+	let poll_totals = stream_store(api.polls.poll_totals(), []);
 </script>
 
 <div class="container">
-	{#each poll_list as poll}
+	{#each $overview as poll}
 		<a href={`/${poll.id}`}>
 			<Card title={poll.name} description={poll.description}>
 				<div class="summary">
@@ -15,8 +17,7 @@
 						<PieChart size="1rem" />
 					</div>
 
-					<!-- TODO: Calculate number of votes -->
-					<span>{poll.options.length} options, {0} votes</span>
+					<span>{poll.options.length} options, {$poll_totals[poll.id]} votes</span>
 				</div>
 			</Card>
 		</a>

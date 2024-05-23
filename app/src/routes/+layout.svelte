@@ -2,9 +2,6 @@
 	import '$lib/global.css';
 
 	import PollList from './PollList.svelte';
-	import api from '$lib/api';
-
-	let poll_list = api.polls.list();
 </script>
 
 <main>
@@ -13,9 +10,7 @@
 		<p>Check out the latest polls and vote on your favourite options.</p>
 	</div>
 
-	{#await poll_list then poll_list}
-		<PollList {poll_list} />
-	{/await}
+	<PollList />
 
 	<div>
 		<slot />
