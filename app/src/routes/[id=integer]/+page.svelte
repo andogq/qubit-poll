@@ -2,48 +2,23 @@
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
 	import { total_votes } from '$lib/poll.js';
+	import { create_result_store } from '$lib/result_store.js';
 	import type { Poll } from '$lib/server.js';
-	import { onDestroy } from 'svelte';
 
 	export let data;
 
 	let poll: Promise<Poll | null>;
 	let vote: number | undefined;
-	let results: Record<string, number> = {};
 
-	let cancel_subscription: () => void | undefined;
+	$: results = create_result_store(data.id);
 
 	$: {
 		// Get the poll information
 		poll = api.polls.get(data.id);
 
-		// Capture initial results when poll loads
-		poll.then((poll) => {
-			results = poll!.options;
-		});
-
-		// Stop any on-going subscription
-		if (cancel_subscription) {
-			cancel_subscription();
-		}
-
-		// Subscribe to vote changes
-		cancel_subscription = api.polls.subscribe(data.id).subscribe({
-			on_data: (votes) => {
-				// Save incomming vote information
-				results = votes;
-			}
-		});
-
 		// Clear any selection
 		reset_vote();
 	}
-
-	onDestroy(() => {
-		if (cancel_subscription) {
-			cancel_subscription();
-		}
-	});
 
 	function reset_vote() {
 		vote = undefined;
@@ -56,11 +31,11 @@
 
 {#await poll then poll}
 	{#if poll}
-		{@const poll_votes = total_votes(results)}
+		{@const poll_votes = total_votes($results)}
 
 		<Card title={poll.name} description={poll.description}>
 			<form on:submit|preventDefault={make_vote}>
-				{#each Object.entries(results) as [option, votes], i}
+				{#each Object.entries($results) as [option, votes], i}
 					{@const p = (votes / (poll_votes || 1)) * 100}
 
 					<label class="btn" style:--fill={`${p}%`}>

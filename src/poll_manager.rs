@@ -192,8 +192,15 @@ async fn manager(mut rx: mpsc::Receiver<Message>) {
             Message::GetPoll { id, tx } => {
                 tx.send(polls.get(id as usize).cloned()).unwrap();
             }
-            Message::Subscribe { poll, tx } => {
-                subscriptions.push((poll, tx));
+            Message::Subscribe { poll: poll_id, tx } => {
+                // Send initial state
+                let Some(poll) = polls.get(poll_id as usize) else {
+                    return;
+                };
+                tx.send(poll.options.clone()).await.unwrap();
+
+                // Save the subscription
+                subscriptions.push((poll_id, tx));
             }
             Message::Vote { poll, option, tx } => {
                 let Some(poll) = polls.get_mut(poll as usize) else {
