@@ -4,13 +4,13 @@
 </script>
 
 <div class="container">
-	<div class="header">
-		<h2>{title}</h2>
+	<h2>{title}</h2>
 
-		<p>{description}</p>
+	<p>{description} {description}</p>
+
+	<div>
+		<slot />
 	</div>
-
-	<slot />
 </div>
 
 <style>
@@ -23,12 +23,16 @@
 		background: var(--surface-1);
 	}
 
-	.header {
-		margin-bottom: var(--size-5);
+	h2 {
+		font-size: var(--font-size-5);
+		margin-bottom: var(--size-2);
+	}
 
-		& > h2 {
-			font-size: var(--font-size-5);
-			margin-bottom: var(--size-2);
-		}
+	p {
+		margin-bottom: var(--size-5);
+		text-overflow: ellipsis;
+		overflow: hidden;
+
+		height: calc(var(--description-clamp) * 1lh);
 	}
 </style>

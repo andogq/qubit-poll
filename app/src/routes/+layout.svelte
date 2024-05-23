@@ -18,8 +18,16 @@
 </main>
 
 <style>
+	@import 'open-props/media';
+
 	main {
-		padding: var(--size-10) var(--size-11);
+		max-width: 1600px;
+		margin: 0 auto;
+		padding: var(--size-fluid-6) var(--size-fluid-5);
+
+		@media (--md-n-below) {
+			padding: var(--size-fluid-4) var(--size-fluid-3);
+		}
 
 		display: flex;
 		flex-direction: column;

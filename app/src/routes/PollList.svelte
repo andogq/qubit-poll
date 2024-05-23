@@ -11,7 +11,7 @@
 <div class="container">
 	{#each $overview as poll}
 		<a href={`/${poll.id}`}>
-			<Card title={poll.name} description={poll.description}>
+			<Card title={poll.name} description={poll.description} --description-clamp={2}>
 				<div class="summary">
 					<div class="icon">
 						<PieChart size="1rem" />
@@ -33,7 +33,7 @@
 <style>
 	.container {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(var(--size-14), 1fr));
 		gap: var(--size-4);
 	}
 
@@ -64,5 +64,13 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+
+		min-height: var(--size-12);
+
+		border-radius: var(--radius-2);
+
+		&:hover {
+			background: var(--surface-3);
+		}
 	}
 </style>
