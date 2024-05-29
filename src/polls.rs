@@ -11,7 +11,7 @@ struct LoggingCtx {
 }
 
 impl FromContext<Ctx> for LoggingCtx {
-    fn from_app_ctx(ctx: Ctx) -> Result<Self, qubit::RpcError> {
+    async fn from_app_ctx(ctx: Ctx) -> Result<Self, qubit::RpcError> {
         println!("processing request for user {}", ctx.user_id);
 
         Ok(LoggingCtx { client: ctx.client })
