@@ -1,7 +1,13 @@
 mod manager;
 mod polls;
 
-use std::net::{Ipv4Addr, SocketAddr};
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        Arc,
+    },
+};
 
 use axum::routing::get;
 use manager::Client;
@@ -12,6 +18,7 @@ use crate::manager::Manager;
 #[derive(Clone)]
 pub struct Ctx {
     pub client: Client,
+    pub user_id: u32,
 }
 
 #[handler]
@@ -30,12 +37,13 @@ async fn main() {
     println!("Generating types");
     app.write_type_to_file("./app/src/lib/server.ts");
 
-    let ctx = Ctx {
-        // Start the manager
-        client: Manager::start(),
-    };
+    let client = Manager::start();
+    let next_user_id = Arc::new(AtomicU32::new(0));
 
-    let (app_service, app_handle) = app.to_service(move |_| ctx.clone());
+    let (app_service, app_handle) = app.to_service(move |req| Ctx {
+        client: client.clone(),
+        user_id: next_user_id.fetch_add(1, Ordering::Relaxed),
+    });
 
     let router = axum::Router::<()>::new()
         .route("/", get(|| async { "Hello, world!" }))

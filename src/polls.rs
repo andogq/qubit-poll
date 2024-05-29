@@ -1,45 +1,60 @@
-use qubit::{handler, Router};
+use qubit::{handler, FromContext, Router};
 
-use crate::{manager::PollOverview, Ctx};
+use crate::{
+    manager::{Client, PollOverview},
+    Ctx,
+};
+
+#[derive(Clone)]
+struct LoggingCtx {
+    client: Client,
+}
+
+impl FromContext<Ctx> for LoggingCtx {
+    fn from_app_ctx(ctx: Ctx) -> Result<Self, qubit::RpcError> {
+        println!("processing request for user {}", ctx.user_id);
+
+        Ok(LoggingCtx { client: ctx.client })
+    }
+}
 
 #[handler]
-async fn get_summaries(ctx: Ctx) -> Vec<PollOverview> {
+async fn get_summaries(ctx: LoggingCtx) -> Vec<PollOverview> {
     ctx.client.get_summaries().await
 }
 
 #[handler]
-async fn get_summary(ctx: Ctx, id: usize) -> Option<PollOverview> {
+async fn get_summary(ctx: LoggingCtx, id: usize) -> Option<PollOverview> {
     ctx.client.get_summary(id).await
 }
 
 #[handler]
-async fn create(ctx: Ctx, name: String, description: String, options: Vec<String>) {
+async fn create(ctx: LoggingCtx, name: String, description: String, options: Vec<String>) {
     ctx.client.create(name, description, options).await;
 }
 
 #[handler]
-async fn vote(ctx: Ctx, poll: usize, option: usize) {
+async fn vote(ctx: LoggingCtx, poll: usize, option: usize) {
     ctx.client.vote(poll, option).await;
 }
 
 mod stream {
     use futures::Stream;
-    use qubit::{handler, Router};
 
-    use crate::{manager::PollOverview, Ctx};
+    use super::*;
 
     #[handler(subscription)]
-    async fn poll(ctx: Ctx, poll_id: usize) -> impl Stream<Item = Vec<usize>> {
+    async fn poll(ctx: LoggingCtx, poll_id: usize) -> impl Stream<Item = Vec<usize>> {
         ctx.client.stream_poll(poll_id).await
     }
 
     #[handler(subscription)]
-    async fn poll_total(ctx: Ctx) -> impl Stream<Item = Vec<usize>> {
+    async fn poll_total(ctx: LoggingCtx) -> impl Stream<Item = Vec<usize>> {
         ctx.client.stream_poll_total().await
     }
 
     #[handler(subscription)]
-    async fn overview(ctx: Ctx) -> impl Stream<Item = Vec<PollOverview>> {
+    async fn overview(ctx: LoggingCtx) -> impl Stream<Item = Vec<PollOverview>> {
         ctx.client.stream_overview().await
     }
 

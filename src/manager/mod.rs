@@ -1,4 +1,4 @@
-use qubit::TypeDependencies;
+use qubit::ExportType;
 use serde::Serialize;
 use tokio::sync::mpsc;
 use ts_rs::TS;
@@ -32,7 +32,7 @@ impl Poll {
     }
 }
 
-#[derive(Clone, Debug, TS, Serialize, TypeDependencies)]
+#[derive(Clone, Debug, TS, Serialize, ExportType)]
 pub struct PollOverview {
     id: usize,
     name: String,
