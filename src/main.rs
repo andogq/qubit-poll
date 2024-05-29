@@ -34,8 +34,11 @@ fn setup_router() -> Router<Ctx> {
 async fn main() {
     let app = setup_router();
 
-    println!("Generating types");
-    app.write_type_to_file("./app/src/lib/server.ts");
+    #[cfg(debug_assertions)]
+    {
+        println!("Generating types");
+        app.write_type_to_file("./app/src/lib/server.ts");
+    }
 
     let client = Manager::start();
     let next_user_id = Arc::new(AtomicU32::new(0));
