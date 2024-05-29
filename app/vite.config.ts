@@ -10,5 +10,13 @@ export default defineConfig({
 		postcss: {
 			plugins: [presetEnv()]
 		}
+	},
+	server: {
+		proxy: {
+			'/api': {
+				target: 'ws://localhost:3030',
+				ws: true
+			}
+		}
 	}
 });

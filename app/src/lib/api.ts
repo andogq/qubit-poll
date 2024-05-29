@@ -1,5 +1,5 @@
 import { ws } from '@qubit-rs/client';
 import type { Server } from '$lib/server';
 
-export default ws<Server>('ws://localhost:3030/api');
-
+const ws_origin = window.location.origin.replace('http', 'ws');
+export default ws<Server>(new URL('/api', ws_origin).toString());
