@@ -10,7 +10,7 @@
 
 <div class="container">
 	{#each $overview as poll}
-		<a href={`/${poll.id}`}>
+		<a href={`/${poll.id}`} data-sveltekit-noscroll>
 			<Card title={poll.name} description={poll.description} --description-clamp={2}>
 				<div class="summary">
 					<div class="icon">
@@ -23,7 +23,7 @@
 		</a>
 	{/each}
 
-	<a href="/new" class="new">
+	<a href="/new" class="new" data-sveltekit-noscroll>
 		<Plus />
 
 		<span>New Poll</span>
