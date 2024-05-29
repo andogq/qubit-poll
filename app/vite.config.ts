@@ -13,8 +13,9 @@ export default defineConfig({
 	},
 	server: {
 		proxy: {
-			'/api': {
+			'/_': {
 				target: 'ws://localhost:3030',
+				rewrite: (path) => path.slice(2),
 				ws: true
 			}
 		}
