@@ -6,7 +6,7 @@
 <div class="container">
 	<h2>{title}</h2>
 
-	<p>{description} {description}</p>
+	<p>{description}</p>
 
 	<div>
 		<slot />
