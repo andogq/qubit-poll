@@ -1,7 +1,7 @@
 use qubit::{handler, FromContext, Router};
 
 use crate::{
-    manager::{Client, PollOverview},
+    manager::{Client, PollOverview, Uuid},
     Ctx,
 };
 
@@ -24,7 +24,7 @@ async fn get_summaries(ctx: LoggingCtx) -> Vec<PollOverview> {
 }
 
 #[handler]
-async fn get_summary(ctx: LoggingCtx, id: usize) -> Option<PollOverview> {
+async fn get_summary(ctx: LoggingCtx, id: Uuid) -> Option<PollOverview> {
     ctx.client.get_summary(id).await
 }
 
@@ -34,27 +34,29 @@ async fn create(ctx: LoggingCtx, name: String, description: String, options: Vec
 }
 
 #[handler]
-async fn vote(ctx: LoggingCtx, poll: usize, option: usize) {
+async fn vote(ctx: LoggingCtx, poll: Uuid, option: usize) {
     ctx.client.vote(poll, option).await;
 }
 
 mod stream {
+    use std::collections::BTreeMap;
+
     use futures::Stream;
 
     use super::*;
 
     #[handler(subscription)]
-    async fn poll(ctx: LoggingCtx, poll_id: usize) -> impl Stream<Item = Vec<usize>> {
+    async fn poll(ctx: LoggingCtx, poll_id: Uuid) -> impl Stream<Item = Vec<usize>> {
         ctx.client.stream_poll(poll_id).await
     }
 
     #[handler(subscription)]
-    async fn poll_total(ctx: LoggingCtx) -> impl Stream<Item = Vec<usize>> {
+    async fn poll_total(ctx: LoggingCtx) -> impl Stream<Item = BTreeMap<Uuid, usize>> {
         ctx.client.stream_poll_total().await
     }
 
     #[handler(subscription)]
-    async fn overview(ctx: LoggingCtx) -> impl Stream<Item = Vec<PollOverview>> {
+    async fn overview(ctx: LoggingCtx) -> impl Stream<Item = BTreeMap<Uuid, PollOverview>> {
         ctx.client.stream_overview().await
     }
 

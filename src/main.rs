@@ -11,7 +11,7 @@ use std::{
 
 use axum::routing::get;
 use manager::Client;
-use qubit::{handler, Router};
+use qubit::Router;
 
 use crate::manager::Manager;
 
@@ -21,13 +21,8 @@ pub struct Ctx {
     pub user_id: u32,
 }
 
-#[handler]
-async fn hello_world(_ctx: Ctx) -> String {
-    "Hello world!".to_string()
-}
-
 fn setup_router() -> Router<Ctx> {
-    polls::init().handler(hello_world)
+    polls::init()
 }
 
 #[tokio::main]

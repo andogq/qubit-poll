@@ -1,13 +1,15 @@
+use std::collections::BTreeMap;
+
 use futures::{stream::FuturesUnordered, StreamExt};
 use tokio::sync::mpsc;
 
-use super::{Poll, PollOverview};
+use super::{Poll, PollOverview, Uuid};
 
 #[derive(Default)]
 pub(super) struct Subscriptions {
-    poll: Vec<(usize, mpsc::Sender<Vec<usize>>)>,
-    poll_total: Vec<mpsc::Sender<Vec<usize>>>,
-    overview: Vec<mpsc::Sender<Vec<PollOverview>>>,
+    poll: Vec<(Uuid, mpsc::Sender<Vec<usize>>)>,
+    poll_total: Vec<mpsc::Sender<BTreeMap<Uuid, usize>>>,
+    overview: Vec<mpsc::Sender<BTreeMap<Uuid, PollOverview>>>,
 }
 
 impl Subscriptions {
@@ -21,7 +23,11 @@ impl Subscriptions {
     }
 
     /// Register a new `poll_total` subscription.
-    pub async fn register_poll_total(&mut self, tx: mpsc::Sender<Vec<usize>>, polls: &[Poll]) {
+    pub async fn register_poll_total(
+        &mut self,
+        tx: mpsc::Sender<BTreeMap<Uuid, usize>>,
+        polls: &BTreeMap<Uuid, Poll>,
+    ) {
         // Send the initial state
         if tx.send(Self::poll_totals(polls)).await.is_ok() {
             // Only store channel if it succeeds
@@ -30,7 +36,11 @@ impl Subscriptions {
     }
 
     /// Register a new `overview` subscription.
-    pub async fn register_overview(&mut self, tx: mpsc::Sender<Vec<PollOverview>>, polls: &[Poll]) {
+    pub async fn register_overview(
+        &mut self,
+        tx: mpsc::Sender<BTreeMap<Uuid, PollOverview>>,
+        polls: &BTreeMap<Uuid, Poll>,
+    ) {
         // Send the initial state
         if tx.send(Self::poll_overviews(polls)).await.is_ok() {
             // Only store channel if it succeeds
@@ -56,7 +66,7 @@ impl Subscriptions {
     }
 
     /// Update all `poll_total` subscriptions.
-    pub async fn update_poll_total(&mut self, polls: &[Poll]) {
+    pub async fn update_poll_total(&mut self, polls: &BTreeMap<Uuid, Poll>) {
         let totals = Self::poll_totals(polls);
 
         self.poll_total.retain(|tx| !tx.is_closed());
@@ -73,7 +83,7 @@ impl Subscriptions {
     }
 
     /// Update all `overview` subscriptions.
-    pub async fn update_overview(&mut self, polls: &[Poll]) {
+    pub async fn update_overview(&mut self, polls: &BTreeMap<Uuid, Poll>) {
         let overview = Self::poll_overviews(polls);
 
         self.overview.retain(|tx| !tx.is_closed());
@@ -90,14 +100,14 @@ impl Subscriptions {
             .await;
     }
 
-    fn poll_totals(polls: &[Poll]) -> Vec<usize> {
+    fn poll_totals(polls: &BTreeMap<Uuid, Poll>) -> BTreeMap<Uuid, usize> {
         polls
             .iter()
-            .map(|poll| poll.votes.iter().sum())
-            .collect::<Vec<_>>()
+            .map(|(id, poll)| (*id, poll.votes.iter().sum()))
+            .collect()
     }
 
-    fn poll_overviews(polls: &[Poll]) -> Vec<PollOverview> {
-        polls.iter().map(|poll| poll.into()).collect()
+    fn poll_overviews(polls: &BTreeMap<Uuid, Poll>) -> BTreeMap<Uuid, PollOverview> {
+        polls.iter().map(|(id, poll)| (*id, poll.into())).collect()
     }
 }

@@ -1,5 +1,7 @@
+use std::collections::BTreeMap;
+
 use qubit::ExportType;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use ts_rs::TS;
 
@@ -11,9 +13,54 @@ pub use client::Client;
 pub use message::Message;
 use subscriptions::Subscriptions;
 
+// TODO: Remove once features are added
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Uuid(uuid::Uuid);
+
+impl TS for Uuid {
+    type WithoutGenerics = <String as TS>::WithoutGenerics;
+
+    fn decl() -> String {
+        <String as TS>::decl()
+    }
+
+    fn decl_concrete() -> String {
+        <String as TS>::decl_concrete()
+    }
+
+    fn name() -> String {
+        <String as TS>::name()
+    }
+
+    fn inline() -> String {
+        <String as TS>::inline()
+    }
+
+    fn inline_flattened() -> String {
+        <String as TS>::inline_flattened()
+    }
+}
+
+impl ExportType for Uuid {}
+
+impl std::ops::Deref for Uuid {
+    type Target = uuid::Uuid;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Uuid {
+    pub fn new_v4() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Poll {
-    id: usize,
+    id: Uuid,
     name: String,
     description: String,
     options: Vec<String>,
@@ -21,7 +68,7 @@ pub struct Poll {
 }
 
 impl Poll {
-    pub fn new(id: usize, name: String, description: String, options: Vec<String>) -> Self {
+    pub fn new(id: Uuid, name: String, description: String, options: Vec<String>) -> Self {
         Self {
             id,
             name,
@@ -34,7 +81,7 @@ impl Poll {
 
 #[derive(Clone, Debug, TS, Serialize, ExportType)]
 pub struct PollOverview {
-    id: usize,
+    id: Uuid,
     name: String,
     description: String,
     options: Vec<String>,
@@ -53,7 +100,7 @@ impl From<&Poll> for PollOverview {
 
 #[derive(Default)]
 pub struct Manager {
-    polls: Vec<Poll>,
+    polls: BTreeMap<Uuid, Poll>,
     subscriptions: Subscriptions,
 }
 
@@ -107,13 +154,13 @@ impl Manager {
     }
 
     /// Get the summary for a specific poll.
-    fn get_summary(&self, id: usize) -> Option<PollOverview> {
-        self.polls.get(id).map(|poll| poll.into())
+    fn get_summary(&self, id: Uuid) -> Option<PollOverview> {
+        self.polls.get(&id).map(|poll| poll.into())
     }
 
     /// Get a list of summaries for all polls.
     fn get_summaries(&self) -> Vec<PollOverview> {
-        self.polls.iter().map(|poll| poll.into()).collect()
+        self.polls.values().map(|poll| poll.into()).collect()
     }
 
     /// Create a new poll.
@@ -122,10 +169,11 @@ impl Manager {
         name: String,
         description: String,
         options: Vec<String>,
-    ) -> usize {
+    ) -> Uuid {
         // Create and insert the new poll
-        let id = self.polls.len();
-        self.polls.push(Poll::new(id, name, description, options));
+        let id = Uuid::new_v4();
+        self.polls
+            .insert(id, Poll::new(id, name, description, options));
 
         // Notify subscribers
         self.subscriptions.update_overview(&self.polls).await;
@@ -136,12 +184,12 @@ impl Manager {
 
     /// Vote for an option on a poll. Returns `true` if the vote is successfully placed, or `false`
     /// if the poll or option cannot be found.
-    async fn vote(&mut self, poll: usize, option: usize) -> bool {
+    async fn vote(&mut self, poll: Uuid, option: usize) -> bool {
         // Fetch the poll and option
-        let Some(poll) = self.polls.get_mut(poll as usize) else {
+        let Some(poll) = self.polls.get_mut(&poll) else {
             return false;
         };
-        let Some(option) = poll.votes.get_mut(option as usize) else {
+        let Some(option) = poll.votes.get_mut(option) else {
             return false;
         };
 
@@ -149,28 +197,31 @@ impl Manager {
         *option += 1;
 
         // Trigger subscription updates
-        self.subscriptions.update_poll(&poll).await;
+        self.subscriptions.update_poll(poll).await;
         self.subscriptions.update_poll_total(&self.polls).await;
 
         true
     }
 
     /// Register vote subscription for a specific poll.
-    async fn register_poll_subscription(&mut self, poll: usize, tx: mpsc::Sender<Vec<usize>>) {
-        if let Some(poll) = self.polls.get(poll) {
+    async fn register_poll_subscription(&mut self, poll: Uuid, tx: mpsc::Sender<Vec<usize>>) {
+        if let Some(poll) = self.polls.get(&poll) {
             self.subscriptions.register_poll(tx, poll).await;
         }
     }
 
     /// Register poll total subscription for all polls.
-    async fn register_poll_total_subscription(&mut self, tx: mpsc::Sender<Vec<usize>>) {
+    async fn register_poll_total_subscription(&mut self, tx: mpsc::Sender<BTreeMap<Uuid, usize>>) {
         self.subscriptions
             .register_poll_total(tx, &self.polls)
             .await;
     }
 
     /// Register overview subscription for all polls.
-    async fn register_overview_subscription(&mut self, tx: mpsc::Sender<Vec<PollOverview>>) {
+    async fn register_overview_subscription(
+        &mut self,
+        tx: mpsc::Sender<BTreeMap<Uuid, PollOverview>>,
+    ) {
         self.subscriptions.register_overview(tx, &self.polls).await;
     }
 }

@@ -4,12 +4,12 @@
 	import { stream_store } from '$lib/store';
 	import { PieChart, Plus } from 'lucide-svelte';
 
-	let overview = stream_store(api.stream.overview(), []);
-	let poll_totals = stream_store(api.stream.poll_total(), []);
+	let overview = stream_store(api.stream.overview(), {});
+	let poll_totals = stream_store(api.stream.poll_total(), {});
 </script>
 
 <div class="container">
-	{#each $overview as poll}
+	{#each Object.values($overview) as poll}
 		<a href={`/${poll.id}`} data-sveltekit-noscroll>
 			<Card title={poll.name} description={poll.description} --description-clamp={2}>
 				<div class="summary">
