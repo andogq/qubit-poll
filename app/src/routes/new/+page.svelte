@@ -1,15 +1,15 @@
 <script lang="ts">
 	import PollForm from '../PollForm.svelte';
 	import api from '$lib/api';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 
 	let poll_form: PollForm;
 
 	async function create_poll(
 		e: CustomEvent<{ name: string; description: string; options: string[] }>
 	) {
-		await api.create(e.detail.name, e.detail.description, e.detail.options);
-		poll_form.clear();
+		let id = await api.create(e.detail.name, e.detail.description, e.detail.options);
+		goto(`/${id}`);
 	}
 
 	afterNavigate(() => {

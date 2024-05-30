@@ -29,8 +29,8 @@ async fn get_summary(ctx: LoggingCtx, id: Uuid) -> Option<PollOverview> {
 }
 
 #[handler]
-async fn create(ctx: LoggingCtx, name: String, description: String, options: Vec<String>) {
-    ctx.client.create(name, description, options).await;
+async fn create(ctx: LoggingCtx, name: String, description: String, options: Vec<String>) -> Uuid {
+    ctx.client.create(name, description, options).await
 }
 
 #[handler]
