@@ -16,6 +16,7 @@ pub enum Message {
     Create {
         name: String,
         description: String,
+        private: bool,
         options: Vec<String>,
         tx: oneshot::Sender<Uuid>,
     },

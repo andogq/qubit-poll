@@ -38,9 +38,13 @@ async fn main() {
     let client = Manager::start();
     let next_user_id = Arc::new(AtomicU32::new(0));
 
-    let (app_service, app_handle) = app.to_service(move |_req| Ctx {
-        client: client.clone(),
-        user_id: next_user_id.fetch_add(1, Ordering::Relaxed),
+    let (app_service, app_handle) = app.to_service(move |_req| {
+        let ctx = Ctx {
+            client: client.clone(),
+            user_id: next_user_id.fetch_add(1, Ordering::Relaxed),
+        };
+
+        async { ctx }
     });
 
     let router = axum::Router::<()>::new()

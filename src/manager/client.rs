@@ -49,12 +49,19 @@ impl Client {
     }
 
     /// Create a new poll with the provided name.
-    pub async fn create(&self, name: String, description: String, options: Vec<String>) -> Uuid {
+    pub async fn create(
+        &self,
+        name: String,
+        description: String,
+        private: bool,
+        options: Vec<String>,
+    ) -> Uuid {
         send_message!(
             self,
             Create {
                 name: name,
                 description: description,
+                private: private,
                 options: options
             }
         )

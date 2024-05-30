@@ -63,16 +63,24 @@ pub struct Poll {
     id: Uuid,
     name: String,
     description: String,
+    private: bool,
     options: Vec<String>,
     votes: Vec<usize>,
 }
 
 impl Poll {
-    pub fn new(id: Uuid, name: String, description: String, options: Vec<String>) -> Self {
+    pub fn new(
+        id: Uuid,
+        name: String,
+        description: String,
+        private: bool,
+        options: Vec<String>,
+    ) -> Self {
         Self {
             id,
             name,
             description,
+            private,
             votes: vec![0; options.len()],
             options,
         }
@@ -132,10 +140,11 @@ impl Manager {
             Message::Create {
                 name,
                 description,
+                private,
                 options,
                 tx,
             } => {
-                tx.send(self.create_poll(name, description, options).await)
+                tx.send(self.create_poll(name, description, private, options).await)
                     .unwrap();
             }
             Message::Vote { poll, option, tx } => {
@@ -160,7 +169,11 @@ impl Manager {
 
     /// Get a list of summaries for all polls.
     fn get_summaries(&self) -> Vec<PollOverview> {
-        self.polls.values().map(|poll| poll.into()).collect()
+        self.polls
+            .values()
+            .filter(|poll| !poll.private)
+            .map(|poll| poll.into())
+            .collect()
     }
 
     /// Create a new poll.
@@ -168,12 +181,13 @@ impl Manager {
         &mut self,
         name: String,
         description: String,
+        private: bool,
         options: Vec<String>,
     ) -> Uuid {
         // Create and insert the new poll
         let id = Uuid::new_v4();
         self.polls
-            .insert(id, Poll::new(id, name, description, options));
+            .insert(id, Poll::new(id, name, description, private, options));
 
         // Notify subscribers
         self.subscriptions.update_overview(&self.polls).await;

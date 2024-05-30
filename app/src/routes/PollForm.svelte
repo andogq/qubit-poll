@@ -3,11 +3,12 @@
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher<{
-		submit: { name: string; description: string; options: string[] };
+		submit: { name: string; description: string; private_form: boolean; options: string[] };
 	}>();
 
 	let name: string;
 	let description: string;
+	let private_form: boolean = false;
 	let options: string[] = [''];
 	let form_el: HTMLFormElement;
 
@@ -26,7 +27,12 @@
 	}
 
 	function create_poll() {
-		dispatch('submit', { name, description, options: options.slice(0, options.length - 1) });
+		dispatch('submit', {
+			name,
+			description,
+			private_form,
+			options: options.slice(0, options.length - 1)
+		});
 	}
 
 	export function clear() {
@@ -52,6 +58,11 @@
 			<textarea bind:value={description} placeholder="Enter poll description"></textarea>
 		</label>
 
+		<label>
+			<input type="checkbox" bind:checked={private_form} />
+			<span>Private Form</span>
+		</label>
+
 		<div class="options">
 			<span>Poll Options</span>
 
@@ -73,14 +84,22 @@
 		& > label {
 			width: 100%;
 
-			& > span {
-				display: block;
-				margin-bottom: var(--size-2);
+			&:not(:has(input[type='checkbox'])) {
+				& > span {
+					display: block;
+					margin-bottom: var(--size-2);
+				}
+
+				& > input,
+				& > textarea {
+					width: 100%;
+				}
 			}
 
-			& > input,
-			& > textarea {
-				width: 100%;
+			&:has(input[type='checkbox']) {
+				& > span {
+					margin-left: var(--size-2);
+				}
 			}
 		}
 

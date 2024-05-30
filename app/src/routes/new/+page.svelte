@@ -6,9 +6,14 @@
 	let poll_form: PollForm;
 
 	async function create_poll(
-		e: CustomEvent<{ name: string; description: string; options: string[] }>
+		e: CustomEvent<{ name: string; description: string; private_form: boolean; options: string[] }>
 	) {
-		let id = await api.create(e.detail.name, e.detail.description, e.detail.options);
+		let id = await api.create(
+			e.detail.name,
+			e.detail.description,
+			e.detail.private_form,
+			e.detail.options
+		);
 		goto(`/${id}`);
 	}
 

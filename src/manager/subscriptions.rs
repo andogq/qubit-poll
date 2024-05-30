@@ -108,6 +108,10 @@ impl Subscriptions {
     }
 
     fn poll_overviews(polls: &BTreeMap<Uuid, Poll>) -> BTreeMap<Uuid, PollOverview> {
-        polls.iter().map(|(id, poll)| (*id, poll.into())).collect()
+        polls
+            .iter()
+            .filter(|(_, poll)| !poll.private)
+            .map(|(id, poll)| (*id, poll.into()))
+            .collect()
     }
 }
