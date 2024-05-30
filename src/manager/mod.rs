@@ -65,38 +65,6 @@ impl Manager {
         tokio::spawn(async move {
             let mut manager = Manager::default();
 
-            // TODO: Get rid of this
-            manager.polls = vec![
-                Poll {
-                    id: 0,
-                    name: "Favourite color".to_string(),
-                    description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-                    options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
-                    votes: vec![3, 7, 2, 5],
-                },
-                Poll {
-                    id: 1,
-                    name: "Best food".to_string(),
-                    description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-                    options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
-                    votes: vec![3, 7, 2, 5],
-                },
-                Poll {
-                    id: 2,
-                    name: "Favourite color".to_string(),
-                    description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-                    options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
-                    votes: vec![3, 7, 2, 5],
-                },
-                Poll {
-                    id: 3,
-                    name: "Best food".to_string(),
-                    description: "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.".to_string(),
-                    options: vec!["Option A".to_string(), "Option B".to_string(), "Option C".to_string(), "Option D".to_string()],
-                    votes: vec![3, 7, 2, 5],
-                },
-            ];
-
             while let Some(message) = rx.recv().await {
                 manager.process(message).await;
             }
