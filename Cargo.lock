@@ -678,9 +678,9 @@ dependencies = [
 
 [[package]]
 name = "qubit"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "063e8d79afa7967bfbdd17425def624a74d01d87151ab06ae5d2dc12b8eff55a"
+checksum = "6ee8451a2b0ab1d860a2e357b0aae3771b14712160c8b9d7f616f5508f840985"
 dependencies = [
  "axum",
  "futures",
@@ -698,9 +698,9 @@ dependencies = [
 
 [[package]]
 name = "qubit-macros"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "495a463082e4dff27178be68d033c822156770f2384d83e0aae1aea1fb8a2e57"
+checksum = "790f58e698c174ba6fd86582c53667f4fb79aebaa986ce0bd2b90f67b32513e9"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,3 +1,8 @@
+<script>
+	import api from '$lib/api';
+	api.hello_world().then(console.log);
+</script>
+
 <span>Select a poll to view results and vote.</span>
 
 <style>

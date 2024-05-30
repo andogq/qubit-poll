@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PollForm from '../PollForm.svelte';
 	import api from '$lib/api';
+	import { afterNavigate } from '$app/navigation';
 
 	let poll_form: PollForm;
 
@@ -10,6 +11,10 @@
 		await api.create(e.detail.name, e.detail.description, e.detail.options);
 		poll_form.clear();
 	}
+
+	afterNavigate(() => {
+		poll_form.scroll_into_view();
+	});
 </script>
 
 <PollForm bind:this={poll_form} on:submit={create_poll} />

@@ -9,6 +9,7 @@
 	let name: string;
 	let description: string;
 	let options: string[] = [''];
+	let form_el: HTMLFormElement;
 
 	// Always make sure there's a new option at the end of the list
 	$: if (options[options.length - 1] !== '') {
@@ -33,10 +34,14 @@
 		description = '';
 		options = [];
 	}
+
+	export function scroll_into_view() {
+		form_el.scrollIntoView({ behavior: 'smooth' });
+	}
 </script>
 
 <Card title="Create Poll" description="Fill out the form to create a new poll.">
-	<form>
+	<form bind:this={form_el}>
 		<label>
 			<span>Poll Name</span>
 			<input type="text" bind:value={name} placeholder="Enter poll name" />

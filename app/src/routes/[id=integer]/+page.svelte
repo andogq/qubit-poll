@@ -8,6 +8,7 @@
 
 	let poll: Promise<PollOverview | null>;
 	let vote: number | undefined;
+	let form_el: HTMLFormElement;
 
 	$: results = stream_store(api.stream.poll(data.id), []);
 
@@ -17,6 +18,11 @@
 
 		// Clear any selection
 		reset_vote();
+	}
+
+	// If the form element is mounted, scroll it into view
+	$: if (form_el) {
+		form_el.scrollIntoView({ behavior: 'smooth' });
 	}
 
 	function reset_vote() {
@@ -38,7 +44,7 @@
 		{@const poll_votes = $results.reduce((total, vote) => total + vote, 0)}
 
 		<Card title={poll.name} description={poll.description}>
-			<form on:submit|preventDefault={make_vote}>
+			<form bind:this={form_el} on:submit|preventDefault={make_vote}>
 				{#each poll.options as option, i}
 					{@const p = ($results[i] / (poll_votes || 1)) * 100}
 
