@@ -1,5 +1,5 @@
 import { ws } from '@qubit-rs/client';
-import type { Server } from '$lib/server';
+import type { QubitServer } from '$lib/bindings';
 
 const ws_origin = window.location.origin.replace('http', 'ws');
-export default ws<Server>(new URL('/_/api', ws_origin).toString());
+export default ws<QubitServer>(new URL('/_/api', ws_origin).toString());

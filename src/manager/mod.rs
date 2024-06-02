@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 
-use qubit::ExportType;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use ts_rs::TS;
@@ -41,8 +40,6 @@ impl TS for Uuid {
         <String as TS>::inline_flattened()
     }
 }
-
-impl ExportType for Uuid {}
 
 impl std::ops::Deref for Uuid {
     type Target = uuid::Uuid;
@@ -87,7 +84,7 @@ impl Poll {
     }
 }
 
-#[derive(Clone, Debug, TS, Serialize, ExportType)]
+#[derive(Clone, Debug, TS, Serialize)]
 pub struct PollOverview {
     id: Uuid,
     name: String,

@@ -32,7 +32,7 @@ async fn main() {
     #[cfg(debug_assertions)]
     {
         println!("Generating types");
-        app.write_type_to_file("./app/src/lib/server.ts");
+        app.write_bindings_to_dir("./app/src/lib/bindings");
     }
 
     let client = Manager::start();
