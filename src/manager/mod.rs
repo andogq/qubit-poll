@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::sync::mpsc;
 use ts_rs::TS;
+use uuid::Uuid;
 
 mod client;
 mod message;
@@ -11,49 +12,6 @@ mod subscriptions;
 pub use client::Client;
 pub use message::Message;
 use subscriptions::Subscriptions;
-
-// TODO: Remove once features are added
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(transparent)]
-pub struct Uuid(uuid::Uuid);
-
-impl TS for Uuid {
-    type WithoutGenerics = <String as TS>::WithoutGenerics;
-
-    fn decl() -> String {
-        <String as TS>::decl()
-    }
-
-    fn decl_concrete() -> String {
-        <String as TS>::decl_concrete()
-    }
-
-    fn name() -> String {
-        <String as TS>::name()
-    }
-
-    fn inline() -> String {
-        <String as TS>::inline()
-    }
-
-    fn inline_flattened() -> String {
-        <String as TS>::inline_flattened()
-    }
-}
-
-impl std::ops::Deref for Uuid {
-    type Target = uuid::Uuid;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Uuid {
-    pub fn new_v4() -> Self {
-        Self(uuid::Uuid::new_v4())
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct Poll {

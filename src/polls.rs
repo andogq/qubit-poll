@@ -1,7 +1,8 @@
 use qubit::{handler, FromContext, Router};
+use uuid::Uuid;
 
 use crate::{
-    manager::{Client, PollOverview, Uuid},
+    manager::{Client, PollOverview},
     Ctx,
 };
 
