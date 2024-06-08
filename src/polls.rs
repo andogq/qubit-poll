@@ -19,17 +19,17 @@ impl FromContext<Ctx> for LoggingCtx {
     }
 }
 
-#[handler]
+#[handler(query)]
 async fn get_summaries(ctx: LoggingCtx) -> Vec<PollOverview> {
     ctx.client.get_summaries().await
 }
 
-#[handler]
+#[handler(query)]
 async fn get_summary(ctx: LoggingCtx, id: Uuid) -> Option<PollOverview> {
     ctx.client.get_summary(id).await
 }
 
-#[handler]
+#[handler(mutation)]
 async fn create(
     ctx: LoggingCtx,
     name: String,
@@ -40,7 +40,7 @@ async fn create(
     ctx.client.create(name, description, private, options).await
 }
 
-#[handler]
+#[handler(mutation)]
 async fn vote(ctx: LoggingCtx, poll: Uuid, option: usize) {
     ctx.client.vote(poll, option).await;
 }

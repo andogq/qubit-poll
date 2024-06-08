@@ -1,8 +1,10 @@
-import type { Stream } from '@qubit-rs/client';
 import { readable, type Readable } from 'svelte/store';
 
-export function stream_store<T>(stream: Stream<T>, initial: T): Readable<T> {
+export function stream_store<T>(
+	create_stream: (on_data: (data: T) => void) => () => void,
+	initial: T
+): Readable<T> {
 	return readable(initial, (set) => {
-		return stream.subscribe({ on_data: set });
+		return create_stream(set);
 	});
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/Card.svelte';
 	import api from '$lib/api';
-	import type { PollOverview } from '$lib/server.js';
+	import type { PollOverview } from '$lib/bindings/PollOverview';
 	import { stream_store } from '$lib/store.js';
 
 	export let data;
@@ -10,11 +10,14 @@
 	let vote: number | undefined;
 	let form_el: HTMLFormElement;
 
-	$: results = stream_store(api.stream.poll(data.id), []);
+	$: results = stream_store(
+		(on_data) => api.stream.poll.subscribe(data.id, on_data),
+		[] as number[]
+	);
 
 	$: {
 		// Get the poll information
-		poll = api.get_summary(data.id);
+		poll = api.get_summary.query(data.id);
 
 		// Clear any selection
 		reset_vote();
@@ -34,7 +37,7 @@
 			return;
 		}
 
-		api.vote(data.id, vote);
+		api.vote.mutate(data.id, vote);
 		reset_vote();
 	}
 </script>

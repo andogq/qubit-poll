@@ -8,7 +8,7 @@
 	async function create_poll(
 		e: CustomEvent<{ name: string; description: string; private_form: boolean; options: string[] }>
 	) {
-		let id = await api.create(
+		let id = await api.create.mutate(
 			e.detail.name,
 			e.detail.description,
 			e.detail.private_form,

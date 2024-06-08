@@ -4,8 +4,8 @@
 	import { stream_store } from '$lib/store';
 	import { PieChart, Plus } from 'lucide-svelte';
 
-	let overview = stream_store(api.stream.overview(), {});
-	let poll_totals = stream_store(api.stream.poll_total(), {});
+	let overview = stream_store(api.stream.overview.subscribe, {});
+	let poll_totals = stream_store(api.stream.poll_total.subscribe, {});
 </script>
 
 <div class="container">
