@@ -34,10 +34,12 @@ async fn create(
     ctx: LoggingCtx,
     name: String,
     description: String,
-    private: bool,
+    is_private: bool,
     options: Vec<String>,
 ) -> Uuid {
-    ctx.client.create(name, description, private, options).await
+    ctx.client
+        .create(name, description, is_private, options)
+        .await
 }
 
 #[handler(mutation)]
